@@ -1,6 +1,13 @@
 import static akka.actor.Actors.* ;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import akka.actor.* ;
 
 
@@ -50,6 +57,28 @@ class Found{
 		this.fileName = fileName;
 		this.lines = lines;
 	}
+	
+	@Override
+	public String toString() {
+		String rtn = "";
+		if(fileName == null) {
+			rtn += "-" + "\n";
+		} else {
+			rtn += fileName + "\n";
+		}
+		
+		int i = 1;
+		for(String line : lines) {
+			i++;
+			rtn += "  " + line;
+			
+			if(i < line.length()) {
+				rtn += "\n";
+			}
+		}
+		
+		return rtn;
+	}
 }
 
 /*
@@ -62,16 +91,40 @@ class Found{
  */
 class ScanActor extends UntypedActor{
 	
-	private final String pattern;
+	private final String patternStr;
 	
-	public ScanActor(String pattern){
-		this.pattern = pattern;
+	public ScanActor(String patternStr){
+		this.patternStr = patternStr;
 	}
 	
 	public void onReceive(Object message){
 		if(message instanceof Configure){
-
-		}
+			Configure v = (Configure) message ;
+            ActorRef collectionActor = v.getCollectionActor();
+            Pattern pattern = Pattern.compile(patternStr);
+            Scanner scanner;
+            List<String> linesMatch = new ArrayList<String>();
+            
+            if(v.fileName == null) {
+            	scanner = new Scanner(System.in);
+            } else {
+            	scanner = new Scanner(new File(v.fileName));
+            }
+            
+            while(scanner.hasNext()) {
+            	Matcher matcher = pattern.matcher(scanner.next());
+            	if(matcher.find()){
+            		
+            	}
+            	
+            }
+            
+            Found found = new Found(v.fileName, Collections.unmodifiableList(linesMatch));
+            
+            collectionActor.tell(found);
+        } else {
+            throw new IllegalArgumentException("Unknown message") ;
+        }
 	}
 }
 
@@ -83,21 +136,28 @@ class ScanActor extends UntypedActor{
  * When all Found messages have been processed, all actors are shut down
  */
 class CollectionActor extends UntypedActor{
-	private FileCount fileCount;
+	private int fileCount;
 	private int numFoundReceived = 0;
 	
-	public void onReceive(Object message){
+	public void onReceive(Object message) throws Exception{
 		if(message instanceof FileCount){
-			fileCount = (FileCount) message;
+			fileCount = ((FileCount) message).count;
 		}
 		else if(message instanceof Found){
 			// TODO message stuff
 			
 			numFoundReceived++;
-			if(numFoundReceived == fileCount.count){
-				Actors.registry().shutdown();
+			if(numFoundReceived == fileCount){
+				shutDown();
 			}
 		}
+		else {
+			throw new IllegalArgumentException("Unknown message") ;
+		}
+	}
+	
+	private void shutDown(){
+		Actors.registry().shutdown();
 	}
 }
 

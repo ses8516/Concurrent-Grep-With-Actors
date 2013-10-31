@@ -21,10 +21,12 @@ import akka.actor.* ;
  * to the CollectionActor
  */
 class Configure{
+	final String pattern;
 	final String fileName;
 	final ActorRef collectionActor;
 	
-	public Configure(String fileName, ActorRef collectionActor){
+	public Configure(String pattern, String fileName, ActorRef collectionActor){
+		this.pattern = pattern;
 		this.fileName = fileName;
 		this.collectionActor = collectionActor;
 	}
@@ -91,17 +93,11 @@ class Found{
  */
 class ScanActor extends UntypedActor{
 	
-	private final String patternStr;
-	
-	public ScanActor(String patternStr){
-		this.patternStr = patternStr;
-	}
-	
 	public void onReceive(Object message){
 		if(message instanceof Configure){
 			Configure v = (Configure) message ;
             ActorRef collectionActor = v.getCollectionActor();
-            Pattern pattern = Pattern.compile(patternStr);
+            Pattern pattern = Pattern.compile(v.pattern);
             Scanner scanner;
             List<String> linesMatch = new ArrayList<String>();
             
@@ -168,7 +164,7 @@ class CollectionActor extends UntypedActor{
  * message to each such actor.
  */
 public class CGrep {
-
+	private static ActorRef collectionActor;
 	/**
 	 * @param args
 	 */
@@ -178,14 +174,18 @@ public class CGrep {
 			System.exit(0);
 		}
 		String pattern = args[0];
+		collectionActor = actorOf(CollectionActor.class);
+		collectionActor.tell(new FileCount(args.length - 1));
 		if(args.length == 1){
 			// Standard Input will be used
 
 		}else{
 			// Files will be used. Files are the rest of the elemetns in args
 			for(int i = 1; i < args.length; i++){
-				String filename = args[i];
-
+				String fileName = args[i];
+				ActorRef scanActor = actorOf(ScanActor);
+				
+				scanActor.tell(new Configure(pattern, fileName, collectionActor));
 			}
 		}
 	}

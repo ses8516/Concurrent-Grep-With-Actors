@@ -84,13 +84,19 @@ class ScanActor extends UntypedActor{
  */
 class CollectionActor extends UntypedActor{
 	private FileCount fileCount;
+	private int numFoundReceived = 0;
 	
 	public void onReceive(Object message){
 		if(message instanceof FileCount){
 			fileCount = (FileCount) message;
 		}
 		else if(message instanceof Found){
-
+			// TODO message stuff
+			
+			numFoundReceived++;
+			if(numFoundReceived == fileCount.count){
+				Actors.registry().shutdown();
+			}
 		}
 	}
 }

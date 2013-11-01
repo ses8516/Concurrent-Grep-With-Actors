@@ -1,6 +1,7 @@
 import static akka.actor.Actors.* ;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -96,15 +97,19 @@ class ScanActor extends UntypedActor{
 	public void onReceive(Object message){
 		if(message instanceof Configure){
 			Configure v = (Configure) message ;
-            ActorRef collectionActor = v.getCollectionActor();
+            ActorRef collectionActor = v.collectionActor;
             Pattern pattern = Pattern.compile(v.pattern);
-            Scanner scanner;
+            Scanner scanner = null;
             List<String> linesMatch = new ArrayList<String>();
             
             if(v.fileName == null) {
             	scanner = new Scanner(System.in);
             } else {
-            	scanner = new Scanner(new File(v.fileName));
+            	try {
+					scanner = new Scanner(new File(v.fileName));
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				}
             }
             
             while(scanner.hasNext()) {
@@ -153,7 +158,7 @@ class CollectionActor extends UntypedActor{
 	}
 	
 	private void shutDown(){
-		Actors.registry().shutdown();
+		Actors.registry().shutdownAll();
 	}
 }
 
@@ -183,7 +188,7 @@ public class CGrep {
 			// Files will be used. Files are the rest of the elemetns in args
 			for(int i = 1; i < args.length; i++){
 				String fileName = args[i];
-				ActorRef scanActor = actorOf(ScanActor);
+				ActorRef scanActor = actorOf(ScanActor.class);
 				
 				scanActor.tell(new Configure(pattern, fileName, collectionActor));
 			}

@@ -184,7 +184,10 @@ public class CGrep {
 		collectionActor.tell(new FileCount(args.length - 1));
 		if(args.length == 1){
 			// Standard Input will be used
-
+			ActorRef scanActor = actorOf(ScanActor.class);
+			scanActor.start();
+			
+			scanActor.tell(new Configure(pattern, null, collectionActor));
 		}else{
 			// Files will be used. Files are the rest of the elemetns in args
 			for(int i = 1; i < args.length; i++){

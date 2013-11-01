@@ -180,6 +180,7 @@ public class CGrep {
 		}
 		String pattern = args[0];
 		collectionActor = actorOf(CollectionActor.class);
+		collectionActor.start();
 		collectionActor.tell(new FileCount(args.length - 1));
 		if(args.length == 1){
 			// Standard Input will be used
@@ -189,6 +190,7 @@ public class CGrep {
 			for(int i = 1; i < args.length; i++){
 				String fileName = args[i];
 				ActorRef scanActor = actorOf(ScanActor.class);
+				scanActor.start();
 				
 				scanActor.tell(new Configure(pattern, fileName, collectionActor));
 			}

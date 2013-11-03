@@ -145,8 +145,18 @@ class CollectionActor extends UntypedActor{
 			fileCount = ((FileCount) message).count;
 		}
 		else if(message instanceof Found){
-			// TODO message stuff
+			Found found = (Found) message;
 			
+			if (!found.lines.isEmpty()){
+				System.out.println("Filename: "+found.fileName);
+				for (String line : found.lines){
+					System.out.println("\t"+line);
+				}
+			} else {
+				System.out.println(found.fileName+" has no matching lines.");
+			}
+				
+				
 			numFoundReceived++;
 			if(numFoundReceived == fileCount){
 				shutDown();
